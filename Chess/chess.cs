@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 
 namespace Chess
 {
@@ -33,6 +34,12 @@ namespace Chess
         }
 
         public Piece GetPiece(Position position) => pieces[position._X,position._Y];
+        public bool OutPiece(Position position, out Piece piece)
+        {
+            piece = pieces[position._X,position._Y];
+            return piece != null;
+        } 
+        public bool CheckSavety(Position position) => true;
     }
 
     public class Move
@@ -48,12 +55,12 @@ namespace Chess
             this.end = end;
         }
 
-        public static Position Horizontal(Position pos, byte mod)
+        public static Position Horizontal(Position pos, sbyte mod)
         {
             int x = pos._X + mod;
             return (0 <= x && x < Position.Size_X) ? new Position(x, pos._Y) : null;
         }
-        public static Position Vertical(Position pos, byte mod)
+        public static Position Vertical(Position pos, sbyte mod)
         {
             int y = pos._Y + mod;
             return (0 <= y && y < Position.Size_Y) ? new Position(pos._X, y) : null;            
@@ -77,79 +84,205 @@ namespace Chess
         {
             isWhite = white;
         }
-        public abstract Position[] GetMoves(Position self);
-        public bool Teammate(Piece piece) => isWhite == piece.isWhite;
+        public abstract List<Position> GetMoves(Position self, ref Board brd);
+        public bool Capturable(Piece attacker) => isWhite == piece.isWhite;
+        protected bool CanMoveTo(Position move, ref Board brd, bool forceTake = false, bool forceFree = false) 
+        => move != null 
+            && 
+            (!(brd.OutPiece(move, out Piece p) 
+                    && 
+                    forceTake) 
+                || 
+            (p.Capturable(this) 
+                    && 
+                    !forceFree));
     }
     class Pawn : Piece
     {
-        protected sbyte directionMod = 1;
-        public Pawn (bool white) : base (white)
+        protected sbyte dMod = 1;
+        public Pawn (bool white, sbyte direction) : base (white)
         {
-            
+            dMod = direction;
         }
-        public override Position[] GetMoves(Position self)
+        public override List<Position> GetMoves(Position self, ref Board brd)
         {
-            throw new NotImplementedException();
+            List<Position> list = new();
+            Position move;
+
+            move = Move.Vertical(self, dMod);
+            if (CanMoveTo(move, ref brd, false, true))
+                list.Add(move);
+
+            move = Move.Vertical(self, dMod * 2);
+            if (CanMoveTo(move, ref brd, false, true) && (self._Y == 1 || 7 == self._Y))
+                list.Add(move);
+
+            move = Diagonal(self, dMod, -1);
+            if (CanMoveTo(move, ref brd, true))
+                list.Add(move);
+
+            move = Diagonal(self, dMod,  1);
+            if (CanMoveTo(move, ref brd, true))
+                list.Add(move);
+
+            // en passant //
+            return list;
         }
         public override string ToString() => (isWhite) ? "♙" : "♟";
     }
-    class Rook : Piece
-    {
-        public Rook (bool white) : base (white)
-        {
-
-        }
-        public override Position[] GetMoves(Position self)
-        {
-            throw new NotImplementedException();
-        }
-        public override string ToString() => (isWhite) ? "♖" : "♜";
-    }
-    class Knight : Piece
-    {
-        public Knight (bool white) : base (white)
-        {
-
-        }
-        public override Position[] GetMoves(Position self)
-        {
-            throw new NotImplementedException();
-        }
-        public override string ToString() => (isWhite) ? "♘" : "♞";        
-    }
-    class Bishop : Piece
-    {
-        public Bishop (bool white) : base (white)
-        {
-
-        }
-        public override Position[] GetMoves(Position self)
-        {
-            throw new NotImplementedException();
-        }
-        public override string ToString() => (isWhite) ? "♗" : "♝"; 
-    }
     class King : Piece
     {
-        public King (bool white) : base (white)
+        public King (bool white) : base (white) {}
+        public override List<Position> GetMoves(Position self, ref Board brd)
         {
+            List<Position> list = new();
+            Position move;
+            for (int mod = -1; mod < 2; mod += 2)
+            {
+                move = Move.Horizontal(self, mod);
+                if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
+                    list.Add(move);
+                move = Move.Vertical(self, mod);
+                if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
+                    list.Add(move);
 
-        }
-        public override Position[] GetMoves(Position self)
-        {
-            throw new NotImplementedException();
+                for (int modII = -1; mod < 2; mod += 2)
+                {
+                    move = Move.Diagonal(self, mod, modII);
+                    if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
+                        list.Add(move);
+                }
+            }
+            return list;
         }
         public override string ToString() => (isWhite) ? "♔" : "♚"; 
     }
-    class Queen : Piece
+    class Knight : Piece
     {
-        public Queen (bool white) : base (white)
+        public Knight (bool white) : base (white) {}
+        public override List<Position> GetMoves(Position self, ref Board brd)
         {
+            List<Position> list = new();
+            Position pre_move, move;
+            for (int mod = -2; mod < 3; mod += 4)
+            {
+                pre_move = Horizontal(self, mod);
+                for (int modII = -1; pre_move != null && mod < 2; mod += 2)
+                {
+                    move = Vertical(pre_move, modII);
+                    if (CanMoveTo(move, ref brd))
+                        list.Add(move);
+                }
 
+                pre_move = Vertical(self, mod);
+                for (int modII = -1; pre_move != null && mod < 2; mod += 2)
+                {
+                    move = Horizontal(pre_move, modII);
+                    if (CanMoveTo(move, ref brd))
+                        list.Add(move);
+                }
+            }
+            
+            return list;
         }
+        public override string ToString() => (isWhite) ? "♘" : "♞";        
+    }
+    class Rook : Piece
+    {
+        public Rook (bool white) : base (white) {}
+        public override List<Position> GetMoves(Position self, ref Board brd)
+        {
+            List<Position> list = new();
+            Position move;
+            for (int mod = -1; mod < 2; mod += 2)
+            {
+                move = self;
+                do {
+                    move = Horizontal(move, mod);
+                    if (CanMoveTo(move, ref brd))
+                        list.Add(move);
+                    else
+                        break;
+                } while (brd.GetPiece(move) == null)
+
+                move = self;
+                do {
+                    move = Vertical(move, mod);
+                    if (CanMoveTo(move, ref brd))
+                        list.Add(move);
+                    else
+                        break;
+                } while (brd.GetPiece(move) == null)
+            }
+            return list;
+        }
+        public override string ToString() => (isWhite) ? "♖" : "♜";
+    }
+    class Bishop : Piece
+    {
+        public Bishop (bool white) : base (white) {}
         public override Position[] GetMoves(Position self)
         {
-            throw new NotImplementedException();
+            List<Position> list = new();
+            Position move;
+            for (int mod = -1; mod < 2; mod += 2)
+                for (int modII = -1; modII < 2; modII += 2)
+                {
+                    move = self;
+                    do {
+                        move = Diagonal(move, mod, modII);
+                        if (CanMoveTo(move, ref brd))
+                            list.Add(move);
+                        else
+                            break;
+                    } while (brd.GetPiece(move) == null)
+                }
+            return list;
+        }
+        public override string ToString() => (isWhite) ? "♗" : "♝"; 
+    }
+    class Queen : Piece
+    {
+        public Queen (bool white) : base (white) {}
+        public override Position[] GetMoves(Position self)
+        {
+            List<Position> list = new();
+            Position move;
+
+            for (int mod = -1; mod < 2; mod += 2)
+            {
+                move = self;
+                do {
+                    move = Horizontal(move, mod);
+                    if (CanMoveTo(move, ref brd))
+                        list.Add(move);
+                    else
+                        break;
+                } while (brd.GetPiece(move) == null)
+                
+                Position move = self;
+                do {
+                    move = Vertical(move, mod);
+                    if (CanMoveTo(move, ref brd))
+                        list.Add(move);
+                    else
+                        break;
+                } while (brd.GetPiece(move) == null)
+            }
+
+            for (int mod = -1; mod < 2; mod += 2)
+                for (int modII = -1; modII < 2; modII += 2)
+                {
+                    move = self;
+                    do {
+                        move = Diagonal(move, mod, modII);
+                        if (CanMoveTo(move, ref brd))
+                            list.Add(move);
+                        else
+                            break;
+                    } while (brd.GetPiece(move) == null)
+                }
+            return list;
         }
         public override string ToString() => (isWhite) ? "♕" : "♛"; 
     }
