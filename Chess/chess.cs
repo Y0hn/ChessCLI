@@ -48,6 +48,25 @@ namespace Chess
             this.end = end;
         }
 
+        public static Position Horizontal(Position pos, byte mod)
+        {
+            int x = pos._X + mod;
+            return (0 <= x && x < Position.Size_X) ? new Position(x, pos._Y) : null;
+        }
+        public static Position Vertical(Position pos, byte mod)
+        {
+            int y = pos._Y + mod;
+            return (0 <= y && y < Position.Size_Y) ? new Position(pos._X, y) : null;            
+        }
+
+        public static Position Diagonal(Position pos, byte modV, byte modH)
+        {
+            pos = Horizontal(pos, modH);
+            if (pos != null) 
+                pos = Vertical(pos, modV);
+            return pos;
+        }
+
         public override string ToString() => $"{piece} {start} -> {end}";
     }
     public abstract class Piece
@@ -58,7 +77,7 @@ namespace Chess
         {
             isWhite = white;
         }
-        public abstract Move[] GetMoves(Position self, ref Board board);
+        public abstract Position[] GetMoves(Position self);
         public bool Teammate(Piece piece) => isWhite == piece.isWhite;
     }
     class Pawn : Piece
@@ -66,12 +85,13 @@ namespace Chess
         protected sbyte directionMod = 1;
         public Pawn (bool white) : base (white)
         {
-
+            
         }
-        public override Move[] GetMoves(Position self, ref Board board)
+        public override Position[] GetMoves(Position self)
         {
             throw new NotImplementedException();
         }
+        public override string ToString() => (isWhite) ? "♙" : "♟";
     }
     class Rook : Piece
     {
@@ -79,10 +99,11 @@ namespace Chess
         {
 
         }
-        public override Move[] GetMoves(Position self, ref Board board)
+        public override Position[] GetMoves(Position self)
         {
             throw new NotImplementedException();
         }
+        public override string ToString() => (isWhite) ? "♖" : "♜";
     }
     class Knight : Piece
     {
@@ -90,11 +111,11 @@ namespace Chess
         {
 
         }
-        public override Move[] GetMoves(Position self, ref Board board)
+        public override Position[] GetMoves(Position self)
         {
             throw new NotImplementedException();
         }
-        
+        public override string ToString() => (isWhite) ? "♘" : "♞";        
     }
     class Bishop : Piece
     {
@@ -102,11 +123,11 @@ namespace Chess
         {
 
         }
-        public override Move[] GetMoves(Position self, ref Board board)
+        public override Position[] GetMoves(Position self)
         {
             throw new NotImplementedException();
         }
-
+        public override string ToString() => (isWhite) ? "♗" : "♝"; 
     }
     class King : Piece
     {
@@ -114,11 +135,11 @@ namespace Chess
         {
 
         }
-        public override Move[] GetMoves(Position self, ref Board board)
+        public override Position[] GetMoves(Position self)
         {
             throw new NotImplementedException();
         }
-
+        public override string ToString() => (isWhite) ? "♔" : "♚"; 
     }
     class Queen : Piece
     {
@@ -126,11 +147,11 @@ namespace Chess
         {
 
         }
-        public override Move[] GetMoves(Position self, ref Board board)
+        public override Position[] GetMoves(Position self)
         {
             throw new NotImplementedException();
         }
-
+        public override string ToString() => (isWhite) ? "♕" : "♛"; 
     }
 
     public class Position
@@ -138,15 +159,23 @@ namespace Chess
         X x; Y y;
 
         public byte _X => (byte)x;
-        public byte _Y => (byte)x;
+        public byte _Y => (byte)y;
 
+        public static byte Size_X => Enum.GetNames(typeof(X)).Lenght;
+        public static byte Size_Y => Enum.GetNames(typeof(Y)).Lenght;
+
+        public Position(byte _x, byte _y)
+        {
+            x = (X)_x;
+            y = (Y)_y;
+        }
+        
         public override string ToString()
         {
             char? c1 = Enum.GetName(typeof(X), x)?.ToLower().ToCharArray()[0];
             char? c2 = Enum.GetName(typeof(Y), y)?.ToLower().ToCharArray()[1];
             return $"{c1}{c2}";
         }
-
         public override bool Equals(object obj) => obj is Position p && p.x == x && y == p.y;
         public override int GetHashCode() => (byte)x * 10 + (byte)y;
 
