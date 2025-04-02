@@ -40,6 +40,22 @@ namespace Chess
             return piece != null;
         } 
         public bool CheckSavety(Position position) => true;
+
+        public override string ToString()
+        {
+            string brd = "";
+            Position temp;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    temp = new(x,y)
+                    brd+=$"{(OutPiece(temp, out Piece p) ? p : " "))}";
+                }
+                brd+="\n";
+            }
+            return brd;
+        }
     }
 
     public class Move
