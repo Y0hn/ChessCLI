@@ -49,7 +49,7 @@ namespace Chess
             {
                 for (int x = 0; x < size; x++)
                 {
-                    temp = new(x,y)
+                    temp = new(x,y);
                     brd+=$"{(OutPiece(temp, out Piece p) ? p : " "))}";
                 }
                 brd+="\n";

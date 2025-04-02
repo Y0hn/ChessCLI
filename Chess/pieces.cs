@@ -123,7 +123,7 @@ namespace Chess
                             list.Add(move);
                         else
                             break;
-                    } while (brd.GetPiece(move) == null)                   
+                    } while (brd.GetPiece(move) == null);                 
                 }
             }
             return list;
@@ -148,7 +148,7 @@ namespace Chess
                             list.Add(move);
                         else
                             break;
-                    } while (brd.GetPiece(move) == null)
+                    } while (brd.GetPiece(move) == null);
                 }
             }
             return list;
@@ -173,7 +173,7 @@ namespace Chess
                             list.Add(move);
                         else
                             break;
-                    } while (brd.GetPiece(move) == null)
+                    } while (brd.GetPiece(move) == null);
                 }
             }
             for (int mod = -1; mod < 2; mod += 2)
@@ -187,7 +187,7 @@ namespace Chess
                             list.Add(move);
                         else
                             break;
-                    } while (brd.GetPiece(move) == null)
+                    } while (brd.GetPiece(move) == null);
                 }
             }
             return list;
