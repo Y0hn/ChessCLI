@@ -55,15 +55,15 @@ namespace Chess
             this.end = end;
         }
 
-        public static Position Horizontal(Position pos, sbyte mod)
+        public static Position Straight(Position pos, sbyte mod, bool vertical = true)
         {
-            int x = pos._X + mod;
-            return (0 <= x && x < Position.Size_X) ? new Position(x, pos._Y) : null;
-        }
-        public static Position Vertical(Position pos, sbyte mod)
-        {
-            int y = pos._Y + mod;
-            return (0 <= y && y < Position.Size_Y) ? new Position(pos._X, y) : null;            
+            mod += (vertical ? pos._X : pos._Y);
+            Position move = null;
+
+            if (0 <= mod && mod < (vertical ? Position.Size_X : Position.Size_Y))
+                move = (vertical) ? new(mod, pos._Y) : new(pos._X, mod);
+
+            return move;
         }
 
         public static Position Diagonal(Position pos, byte modV, byte modH)
@@ -109,19 +109,19 @@ namespace Chess
             List<Position> list = new();
             Position move;
 
-            move = Move.Vertical(self, dMod);
+            move = Move.Straight(self, dMod);
             if (CanMoveTo(move, ref brd, false, true))
                 list.Add(move);
 
-            move = Move.Vertical(self, dMod * 2);
+            move = Move.Straight(self, dMod * 2);
             if (CanMoveTo(move, ref brd, false, true) && (self._Y == 1 || 7 == self._Y))
                 list.Add(move);
 
-            move = Diagonal(self, dMod, -1);
+            move = Move.Diagonal(self, dMod, -1);
             if (CanMoveTo(move, ref brd, true))
                 list.Add(move);
 
-            move = Diagonal(self, dMod,  1);
+            move = Move.Diagonal(self, dMod,  1);
             if (CanMoveTo(move, ref brd, true))
                 list.Add(move);
 
@@ -139,12 +139,12 @@ namespace Chess
             Position move;
             for (int mod = -1; mod < 2; mod += 2)
             {
-                move = Move.Horizontal(self, mod);
-                if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
-                    list.Add(move);
-                move = Move.Vertical(self, mod);
-                if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
-                    list.Add(move);
+                for (int i = 0; i < 2; i++)
+                {
+                    move = Move.Straight(self, mod, i==0);
+                    if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
+                        list.Add(move);
+                }
 
                 for (int modII = -1; mod < 2; mod += 2)
                 {
@@ -166,23 +166,17 @@ namespace Chess
             Position pre_move, move;
             for (int mod = -2; mod < 3; mod += 4)
             {
-                pre_move = Horizontal(self, mod);
-                for (int modII = -1; pre_move != null && mod < 2; mod += 2)
+                for (int i = 0; i < 2; i++)
                 {
-                    move = Vertical(pre_move, modII);
-                    if (CanMoveTo(move, ref brd))
-                        list.Add(move);
+                    pre_move = Move.Straight(self, mod, i==0);
+                    for (int modII = -1; pre_move != null && mod < 2; mod += 2)
+                    {
+                        move = Move.Straight(pre_move, modII, i!=0);
+                        if (CanMoveTo(move, ref brd))
+                            list.Add(move);
+                    }
                 }
-
-                pre_move = Vertical(self, mod);
-                for (int modII = -1; pre_move != null && mod < 2; mod += 2)
-                {
-                    move = Horizontal(pre_move, modII);
-                    if (CanMoveTo(move, ref brd))
-                        list.Add(move);
-                }
-            }
-            
+            }            
             return list;
         }
         public override string ToString() => (isWhite) ? "♘" : "♞";        
@@ -196,23 +190,17 @@ namespace Chess
             Position move;
             for (int mod = -1; mod < 2; mod += 2)
             {
-                move = self;
-                do {
-                    move = Horizontal(move, mod);
-                    if (CanMoveTo(move, ref brd))
-                        list.Add(move);
-                    else
-                        break;
-                } while (brd.GetPiece(move) == null)
-
-                move = self;
-                do {
-                    move = Vertical(move, mod);
-                    if (CanMoveTo(move, ref brd))
-                        list.Add(move);
-                    else
-                        break;
-                } while (brd.GetPiece(move) == null)
+                for (int i = 0; i < 2; i++)
+                {
+                    move = self;
+                    do {
+                        move = Move.Straight(move, mod, i==0);
+                        if (CanMoveTo(move, ref brd))
+                            list.Add(move);
+                        else
+                            break;
+                    } while (brd.GetPiece(move) == null)                   
+                }
             }
             return list;
         }
@@ -226,17 +214,19 @@ namespace Chess
             List<Position> list = new();
             Position move;
             for (int mod = -1; mod < 2; mod += 2)
+            {
                 for (int modII = -1; modII < 2; modII += 2)
                 {
                     move = self;
                     do {
-                        move = Diagonal(move, mod, modII);
+                        move = Move.Diagonal(move, mod, modII);
                         if (CanMoveTo(move, ref brd))
                             list.Add(move);
                         else
                             break;
                     } while (brd.GetPiece(move) == null)
                 }
+            }
             return list;
         }
         public override string ToString() => (isWhite) ? "♗" : "♝"; 
@@ -248,40 +238,34 @@ namespace Chess
         {
             List<Position> list = new();
             Position move;
-
             for (int mod = -1; mod < 2; mod += 2)
             {
-                move = self;
-                do {
-                    move = Horizontal(move, mod);
-                    if (CanMoveTo(move, ref brd))
-                        list.Add(move);
-                    else
-                        break;
-                } while (brd.GetPiece(move) == null)
-                
-                Position move = self;
-                do {
-                    move = Vertical(move, mod);
-                    if (CanMoveTo(move, ref brd))
-                        list.Add(move);
-                    else
-                        break;
-                } while (brd.GetPiece(move) == null)
-            }
-
-            for (int mod = -1; mod < 2; mod += 2)
-                for (int modII = -1; modII < 2; modII += 2)
+                for (int i = 0; i < 2; i++)
                 {
                     move = self;
                     do {
-                        move = Diagonal(move, mod, modII);
+                        move = Move.Straight(move, mod, i==0);
                         if (CanMoveTo(move, ref brd))
                             list.Add(move);
                         else
                             break;
                     } while (brd.GetPiece(move) == null)
                 }
+            }
+            for (int mod = -1; mod < 2; mod += 2)
+            {
+                for (int modII = -1; modII < 2; modII += 2)
+                {
+                    move = self;
+                    do {
+                        move = Move.Diagonal(move, mod, modII);
+                        if (CanMoveTo(move, ref brd))
+                            list.Add(move);
+                        else
+                            break;
+                    } while (brd.GetPiece(move) == null)
+                }
+            }
             return list;
         }
         public override string ToString() => (isWhite) ? "♕" : "♛"; 
