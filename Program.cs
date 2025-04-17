@@ -7,9 +7,11 @@ namespace Program
     {
         static void Main(string[] args)
         {
+            Console.BackgroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("Hello world !");
 
-            //Board brd = new();
+            Board brd = new();
+            brd.ConsoleWriteOut();
         }
     }
 }

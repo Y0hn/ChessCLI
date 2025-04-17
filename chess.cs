@@ -72,13 +72,19 @@ namespace Chess
             ConsoleColor prev = Console.BackgroundColor;
 
             for (int y = 0; y < size; y++)
+            {
                 for (int x = 0; x < size; x++)
                 {
                     Console.BackgroundColor = (x+y)%2 == 1 ? ConsoleColor.Black : ConsoleColor.White;
-                    Console.Write($" {pieces[x,y]} ");
+                    string? p = pieces[x,y]?.ToString();
+                    p ??= " ";
+                    Console.Write($" {p}  ");
                 }
+                Console.WriteLine();
+            }
 
             Console.BackgroundColor = prev;
+            Console.WriteLine();
         }
     }
 
