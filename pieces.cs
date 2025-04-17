@@ -1,43 +1,31 @@
+#pragma warning disable CS8604 // Possible null reference argument.
+
 namespace Chess
 {
-    public abstract class Piece
+    public abstract class Piece(bool white)
     {
-        protected bool isWhite;
+        protected bool isWhite = white;
 
-        public Piece (bool white)
-        {
-            isWhite = white;
-        }
         public abstract List<Position> GetMoves(Position self, ref Board brd);
-        public bool Capturable(Piece attacker) => isWhite == piece.isWhite;
-        protected bool CanMoveTo(Position move, ref Board brd, bool forceTake = false, bool forceFree = false) 
-        => move != null 
-            && 
-            (!(brd.OutPiece(move, out Piece p) 
-                    && 
-                    forceTake) 
-                || 
-            (p.Capturable(this) 
-                    && 
-                    !forceFree));
+        public bool Capturable(Piece attacker) 
+            => isWhite == attacker.isWhite;
+        protected bool CanMoveTo(Position? move, ref Board brd, bool forceTake = false, bool forceFree = false) 
+            => move != null && (!(brd.OutPiece(move, out Piece p) && forceTake) 
+                            || (p.Capturable(this) && !forceFree));
     }
-    class Pawn : Piece
+    class Pawn(bool white, sbyte direction) : Piece(white)
     {
-        protected sbyte dMod = 1;
-        public Pawn (bool white, sbyte direction) : base (white)
-        {
-            dMod = direction;
-        }
+        protected sbyte dMod = direction;
         public override List<Position> GetMoves(Position self, ref Board brd)
         {
-            List<Position> list = new();
-            Position move;
+            List<Position> list = [];
+            Position? move;
 
             move = Move.Straight(self, dMod);
             if (CanMoveTo(move, ref brd, false, true))
                 list.Add(move);
 
-            move = Move.Straight(self, dMod * 2);
+            move = Move.Straight(self, (sbyte)(dMod * 2));
             if (CanMoveTo(move, ref brd, false, true) && (self._Y == 1 || 7 == self._Y))
                 list.Add(move);
 
@@ -52,25 +40,25 @@ namespace Chess
             // en passant //
             return list;
         }
-        public override string ToString() => (isWhite) ? "♙" : "♟";
+        public override string ToString() 
+            => isWhite ? "♙" : "♟";
     }
-    class King : Piece
+    class King(bool white) : Piece(white)
     {
-        public King (bool white) : base (white) {}
         public override List<Position> GetMoves(Position self, ref Board brd)
         {
-            List<Position> list = new();
-            Position move;
-            for (int mod = -1; mod < 2; mod += 2)
+            List<Position> list = [];
+            Position? move;
+            for (sbyte mod = -1; mod < 2; mod += 2)
             {
-                for (int i = 0; i < 2; i++)
+                for (sbyte i = 0; i < 2; i++)
                 {
                     move = Move.Straight(self, mod, i==0);
                     if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
                         list.Add(move);
                 }
 
-                for (int modII = -1; mod < 2; mod += 2)
+                for (sbyte modII = -1; mod < 2; mod += 2)
                 {
                     move = Move.Diagonal(self, mod, modII);
                     if (CanMoveTo(move, ref brd) && brd.CheckSavety(move))
@@ -79,21 +67,21 @@ namespace Chess
             }
             return list;
         }
-        public override string ToString() => (isWhite) ? "♔" : "♚"; 
+        public override string ToString() 
+            => isWhite ? "♔" : "♚"; 
     }
-    class Knight : Piece
+    class Knight(bool white) : Piece(white)
     {
-        public Knight (bool white) : base (white) {}
         public override List<Position> GetMoves(Position self, ref Board brd)
         {
-            List<Position> list = new();
-            Position pre_move, move;
-            for (int mod = -2; mod < 3; mod += 4)
+            List<Position> list = [];
+            Position? pre_move, move;
+            for (sbyte mod = -2; mod < 3; mod += 4)
             {
                 for (int i = 0; i < 2; i++)
                 {
                     pre_move = Move.Straight(self, mod, i==0);
-                    for (int modII = -1; pre_move != null && mod < 2; mod += 2)
+                    for (sbyte modII = -1; pre_move != null && mod < 2; mod += 2)
                     {
                         move = Move.Straight(pre_move, modII, i!=0);
                         if (CanMoveTo(move, ref brd))
@@ -103,16 +91,16 @@ namespace Chess
             }            
             return list;
         }
-        public override string ToString() => (isWhite) ? "♘" : "♞";        
+        public override string ToString() 
+            => isWhite ? "♘" : "♞";        
     }
-    class Rook : Piece
+    class Rook(bool white) : Piece(white)
     {
-        public Rook (bool white) : base (white) {}
         public override List<Position> GetMoves(Position self, ref Board brd)
         {
-            List<Position> list = new();
-            Position move;
-            for (int mod = -1; mod < 2; mod += 2)
+            List<Position> list = [];
+            Position? move;
+            for (sbyte mod = -1; mod < 2; mod += 2)
             {
                 for (int i = 0; i < 2; i++)
                 {
@@ -128,18 +116,18 @@ namespace Chess
             }
             return list;
         }
-        public override string ToString() => (isWhite) ? "♖" : "♜";
+        public override string ToString() 
+            => isWhite ? "♖" : "♜";
     }
-    class Bishop : Piece
+    class Bishop(bool white) : Piece(white)
     {
-        public Bishop (bool white) : base (white) {}
-        public override Position[] GetMoves(Position self)
+        public override List<Position> GetMoves(Position self, ref Board brd)
         {
             List<Position> list = new();
-            Position move;
-            for (int mod = -1; mod < 2; mod += 2)
+            Position? move;
+            for (sbyte mod = -1; mod < 2; mod += 2)
             {
-                for (int modII = -1; modII < 2; modII += 2)
+                for (sbyte modII = -1; modII < 2; modII += 2)
                 {
                     move = self;
                     do {
@@ -153,16 +141,16 @@ namespace Chess
             }
             return list;
         }
-        public override string ToString() => (isWhite) ? "♗" : "♝"; 
+        public override string ToString() 
+            => isWhite ? "♗" : "♝"; 
     }
-    class Queen : Piece
+    class Queen(bool white) : Piece(white)
     {
-        public Queen (bool white) : base (white) {}
-        public override Position[] GetMoves(Position self)
+        public override List<Position> GetMoves(Position self, ref Board brd)
         {
             List<Position> list = new();
-            Position move;
-            for (int mod = -1; mod < 2; mod += 2)
+            Position? move;
+            for (sbyte mod = -1; mod < 2; mod += 2)
             {
                 for (int i = 0; i < 2; i++)
                 {
@@ -176,9 +164,9 @@ namespace Chess
                     } while (brd.GetPiece(move) == null);
                 }
             }
-            for (int mod = -1; mod < 2; mod += 2)
+            for (sbyte mod = -1; mod < 2; mod += 2)
             {
-                for (int modII = -1; modII < 2; modII += 2)
+                for (sbyte modII = -1; modII < 2; modII += 2)
                 {
                     move = self;
                     do {
@@ -192,6 +180,8 @@ namespace Chess
             }
             return list;
         }
-        public override string ToString() => (isWhite) ? "♕" : "♛"; 
+
+        public override string ToString() 
+            => isWhite ? "♕" : "♛"; 
     }
 }
